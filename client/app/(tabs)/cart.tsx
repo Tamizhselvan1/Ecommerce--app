@@ -94,7 +94,7 @@ export default function Cart() {
           </Text>
 
           <Text className="text-gray-500 mt-2 text-center">
-            Looks like you haven't added anything yet.
+            Looks like you haven`t added anything yet.
           </Text>
 
           <TouchableOpacity
