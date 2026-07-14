@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/components/Header";
 import { BANNERS, dummyProducts } from "@/assets/assets";
@@ -25,6 +25,7 @@ export default function Home() {
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const bannerRef = useRef<ScrollView>(null);
 
   const categories = [
     { id: "all", name: "All", icon: "grid" },
@@ -40,6 +41,25 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+
+  useEffect(() => {
+  const interval = setInterval(() => {
+    const nextIndex =
+      activeBannerIndex === BANNERS.length - 1
+        ? 0
+        : activeBannerIndex + 1;
+
+    bannerRef.current?.scrollTo({
+      x: nextIndex * (width - 32),
+      animated: true,
+    });
+
+    setActiveBannerIndex(nextIndex);
+  }, 3000); // Auto scroll every 3 seconds
+
+  return () => clearInterval(interval);
+   }, [activeBannerIndex]);
+
   return (
     <SafeAreaView className="flex-1" edges={["top"]}>
       <Header title="Forever" showMenu showCart showLogo />
@@ -51,6 +71,7 @@ export default function Home() {
         {/* Banner Slider */}
         <View className="mb-6">
           <ScrollView
+          ref={bannerRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
