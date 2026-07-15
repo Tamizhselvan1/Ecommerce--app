@@ -6,9 +6,15 @@ export const clerkWebhook = async (req: Request, res: Response) => {
   let evt: any;
   try {
     const secretKey = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
+    console.log("Webhook hit!");
+    console.log("Secret key exists:", !!secretKey);
+    console.log("Req body type:", typeof req.body, "Is Buffer:", Buffer.isBuffer(req.body));
+    
     if (!secretKey) {
-      throw new Error("Missing CLERK_WEBHOOK_SIGNING_SECRET");
+      console.error("❌ Missing CLERK_WEBHOOK_SIGNING_SECRET");
+      return res.status(500).send("Server configuration error");
     }
+    
     evt = await verifyWebhook(req, { signingSecret: secretKey });
   } catch (err) {
     console.error("❌ Webhook signature verification failed:", err);
