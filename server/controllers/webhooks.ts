@@ -4,7 +4,11 @@ import User from "../models/User.js";
 
 export const clerkWebhook = async (req: Request, res: Response) => {
   try {
-    const evt = await verifyWebhook(req);
+    const secretKey = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
+    if (!secretKey) {
+      throw new Error("Missing CLERK_WEBHOOK_SIGNING_SECRET");
+    }
+    const evt = await verifyWebhook(req, { secretKey });
 
     if (evt.type === "user.created" || evt.type === "user.updated") {
       const user = await User.findOne({ clerkId: evt.data.id });
