@@ -26,14 +26,10 @@ app.get('/', (req: Request, res: Response) => {
 
 await makeAdmin()
 
-app.post('/api/test-body', express.raw({type: 'application/json'}), (req, res) => {
-    res.json({
-        isBuffer: Buffer.isBuffer(req.body),
-        type: typeof req.body,
-        body: req.body.toString('utf8')
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Server is running at http://localhost:${port}`);
     });
-});
+}
 
-app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
-});
+export default app;
