@@ -9,7 +9,7 @@ export const clerkWebhook = async (req: Request, res: Response) => {
     if (!secretKey) {
       throw new Error("Missing CLERK_WEBHOOK_SIGNING_SECRET");
     }
-    evt = await verifyWebhook(req, { secretKey });
+    evt = await verifyWebhook(req, { signingSecret: secretKey });
   } catch (err) {
     console.error("❌ Webhook signature verification failed:", err);
     return res.status(400).send("Error verifying webhook");
