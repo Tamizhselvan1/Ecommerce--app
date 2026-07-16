@@ -1,6 +1,14 @@
 import "dotenv/config";
 import express, { Request, Response } from 'express';
 import cors from "cors";
+
+// Disable Vercel's default body parser so we can get the raw body for webhooks
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 import connectDB from "./config/db.js";
 import { clerkMiddleware } from '@clerk/express'
 import { clerkWebhook } from "./controllers/webhooks.js";

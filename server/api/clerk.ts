@@ -1,44 +1,65 @@
-import { verifyWebhook } from "@clerk/express/webhooks";
-import { Request, Response } from "express";
+import { Webhook } from "svix";
 import User from "../models/User.js";
-import { log } from "node:console";
+import connectDB from "../config/db.js";
 
-export const clerkWebhook = async (req: Request, res: Response) => {
-  let evt: any;
+// Disable Vercel's default body parser so we can get the raw body
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+// Helper function to get raw body
+async function getRawBody(req: any): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
   try {
     const secretKey = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
-    console.log("Webhook hit!");
-    console.log("Secret key exists:", !!secretKey);
-    console.log("Req body type:", typeof req.body, "Is Buffer:", Buffer.isBuffer(req.body));
     
     if (!secretKey) {
       console.error("❌ Missing CLERK_WEBHOOK_SIGNING_SECRET");
       return res.status(500).send("Server configuration error");
     }
-    
-    evt = await verifyWebhook(req, { signingSecret: secretKey });
-  } catch (err) {
-    console.error("❌ Webhook signature verification failed:", err);
-    return res.status(400).send("Error verifying webhook");
-  }
 
-  try {
+    const payload = await getRawBody(req);
+    const headers = req.headers;
+
+    const wh = new Webhook(secretKey);
+    let evt: any;
+    
+    try {
+      evt = wh.verify(payload, headers);
+    } catch (err) {
+      console.error("❌ Webhook signature verification failed:", err);
+      return res.status(400).send("Error verifying webhook");
+    }
+
     console.log("✅ Webhook verified. Event type:", evt.type);
+
+    await connectDB();
 
     if (evt.type === "user.created" || evt.type === "user.updated") {
       console.log("Processing user data for Clerk ID:", evt.data.id);
       
       const user = await User.findOne({ clerkId: evt.data.id });
       const email = evt.data.email_addresses?.[0]?.email_address;
-      console.log(email)
+      
       const userData = {
         clerkId: evt.data.id,
         email: email,
         name: `${evt.data.first_name ?? ""} ${evt.data.last_name ?? ""}`.trim(),
         image: evt.data.image_url,
       };
-
-      console.log("User data to save:", userData);
 
       if (user) {
         console.log("Updating existing user...");
@@ -56,7 +77,7 @@ export const clerkWebhook = async (req: Request, res: Response) => {
 
     return res.json({ success: true, message: "Webhook processed" });
   } catch (err) {
-    console.error("❌ Error saving user to database:", err);
-    return res.status(500).send("Database error");
+    console.error("❌ Error processing webhook:", err);
+    return res.status(500).send("Server error");
   }
-};
+}
