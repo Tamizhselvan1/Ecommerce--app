@@ -2,14 +2,7 @@ import { dummyCart } from '@/assets/assets';
 import { CartItem, Product } from '@/constants/types';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-export type CartItem = {
-    id: string;
-    productId: string;
-    product: Product;
-    quantity: number;
-    size: string;
-    price: number;
-};
+
 
 type CartContextType = {
     cartItems: CartItem[];
