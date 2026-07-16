@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { clerkClient } from "@clerk/express";
 import User from "../models/User.js";
 import connectDB from "../config/db.js";
@@ -13,7 +14,7 @@ const makeAdmin = async () => {
             return;
         }
 
-        const user = await User.findOneAndUpdate({email},{role:'admin'});
+        const user = await User.findOneAndUpdate({email},{role:'admin'}, {new: true});
         if(user){
             await clerkClient.users.updateUserMetadata(user.clerkId as string, {publicMetadata: {role: 'admin'}});
             console.log(`Successfully made ${email} an admin!`);
@@ -25,5 +26,4 @@ const makeAdmin = async () => {
     }
 }
 
-makeAdmin();
 export default makeAdmin;
