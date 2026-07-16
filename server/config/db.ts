@@ -1,21 +1,17 @@
 import mongoose from "mongoose";
 
-// Global cache for serverless environments like Vercel
-let isConnected = false;
-
 const connectDB = async () => {
-  if (isConnected) {
+  if (mongoose.connection.readyState === 1) {
     console.log("✅ Using existing MongoDB connection");
     return;
   }
 
   try {
     console.log("Connecting to MongoDB...");
-    const db = await mongoose.connect(process.env.MONGODB_URI as string, {
+    await mongoose.connect(process.env.MONGODB_URI as string, {
       serverSelectionTimeoutMS: 5000,
     });
     
-    isConnected = !!db.connections[0].readyState;
     console.log("✅ MongoDB connected successfully");
   } catch (error: any) {
     console.error("❌ Failed to connect to MongoDB. Error details:");

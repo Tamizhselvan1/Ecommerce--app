@@ -47,6 +47,10 @@ export const clerkWebhook = async (req: Request, res: Response) => {
 
   try {
     console.log("✅ Webhook verified. Event type:", evt.type);
+    
+    // Ensure database is connected before running Mongoose queries!
+    const connectDB = (await import("../config/db.js")).default;
+    await connectDB();
 
     if (evt.type === "user.created" || evt.type === "user.updated") {
       console.log("Processing user data for Clerk ID:", evt.data.id);
