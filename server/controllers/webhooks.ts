@@ -1,6 +1,7 @@
 import { verifyWebhook } from "@clerk/express/webhooks";
 import { Request, Response } from "express";
 import User from "../models/User.js";
+import { log } from "node:console";
 
 export const clerkWebhook = async (req: Request, res: Response) => {
   let evt: any;
@@ -29,7 +30,7 @@ export const clerkWebhook = async (req: Request, res: Response) => {
       
       const user = await User.findOne({ clerkId: evt.data.id });
       const email = evt.data.email_addresses?.[0]?.email_address;
-      
+      console.log(email)
       const userData = {
         clerkId: evt.data.id,
         email: email,
