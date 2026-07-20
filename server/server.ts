@@ -13,6 +13,11 @@ import connectDB from "./config/db.js";
 import { clerkMiddleware } from '@clerk/express'
 import { clerkWebhook } from "./controllers/webhooks.js";
 import makeAdmin from "./scripts/makeAdmin.js";
+import ProductRouter from "./routes/productsRoutes.js";
+import CartRouter from "./routes/cartRouter.js";
+import OrderRouter from "./routes/ordersRouter.js";
+import AddressRouter from "./routes/addressRouter.js";
+import AdminRouter from "./routes/adminRouter.js";
 
 const app = express();
 
@@ -31,6 +36,13 @@ const port = process.env.PORT || 3000;
 app.get('/', (req: Request, res: Response) => {
     res.send('Server is Live!');
 });
+
+app.use("/api/products",ProductRouter);
+app.use('/api/cart', CartRouter);
+app.use('/api/orders', OrderRouter);
+app.use('/api/addresses', AddressRouter);
+app.use('/api/admin', AdminRouter);
+
 
 await makeAdmin()
 
