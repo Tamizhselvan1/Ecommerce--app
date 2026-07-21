@@ -5,11 +5,13 @@ import Toast from 'react-native-toast-message';
 import { COLORS, CATEGORIES } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { dummyProducts } from "@/assets/assets";
+import api from "@/constants/api";
+import { useAuth } from "@clerk/clerk-expo";
 
 export default function EditProduct() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { getToken } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -31,7 +33,8 @@ export default function EditProduct() {
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const product: any = dummyProducts.find((p) => p._id === id);
+                const response = await api.get(`/products/${id}`);
+                const product = response.data.data;
                 setName(product.name);
                 setDescription(product.description || "");
                 setPrice(product.price.toString());
@@ -125,7 +128,23 @@ export default function EditProduct() {
                     formData.append("images", { uri, name: filename, type: "image/jpeg" } as any);
                 }
             }
-            router.back();
+            
+            const token = await getToken();
+            const response = await api.put(`/products/${id}`, formData, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+            
+            if(response.data.success){
+                Toast.show({
+                    type: 'success',
+                    text1: 'Product Updated',
+                });
+                router.back();
+            }
+
         } catch (error: any) {
             console.error("Failed to update product:", error);
             Toast.show({

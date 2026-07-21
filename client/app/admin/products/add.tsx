@@ -5,8 +5,18 @@ import { COLORS } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { CATEGORIES } from "@/constants";
+import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/clerk-expo";
+import api from "@/constants/api";
+import { useColorScheme } from "nativewind";
 
 export default function AddProduct() {
+
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const router = useRouter()
+    const {getToken} = useAuth();
+    
 
     const [submitting, setSubmitting] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -46,28 +56,76 @@ export default function AddProduct() {
             });
             return;
         }
+        try {
+            setSubmitting(true);
+            const token = await getToken();
+            const fromData = new FormData();
+            
+            //Basic fields
+            const fields ={
+                name,description,price,
+                stock: stock || '0',
+                category,
+                isFeatured: String(isFeatured),
+                sizes
+            }
+            Object.entries(fields).forEach(([key, value]) => fromData.append(key, value))
+
+            //Images
+            for (const [i, uri] of images.entries()){
+                const filename= `images-${i}.jpg`;
+                fromData.append("images",{uri, name: filename, type: 'image/jpeg'} as any)
+            }
+
+            const {data} = await api.post('/products', fromData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            })
+
+            if(!data?.success) throw new Error("upload failed")
+
+                Toast.show({
+                    type:'success',
+                    text1: 'success',
+                    text2: 'Product created'
+                })
+                router.replace('/admin/products')
+
+        } catch (error:any) {
+            console.error(error);
+            Toast.show({
+                    type:'error',
+                    text1: 'Failed to Create Product',
+                    text2: error.response?.data?.message || 'Something went wrong'
+                })
+        }finally{
+            setSubmitting(false);
+        }
     };
 
     return (
-        <ScrollView className="flex-1 bg-surface p-4">
-            <View className="bg-white p-4 rounded-xl shadow-sm mb-20">
+        <ScrollView className="flex-1 bg-surface dark:bg-gray-900 p-4">
+            <View className="bg-white dark:bg-gray-950 p-4 rounded-xl shadow-sm mb-20">
                 {/* NAME */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Product Name *
                 </Text>
                 <TextInput
-                    className="bg-surface p-3 rounded-lg mb-4 text-primary"
+                    className="bg-surface dark:bg-gray-900 p-3 rounded-lg mb-4 text-primary dark:text-white"
+                    style={{ outlineStyle: 'none' } as any}
                     placeholder="e.g. Wireless Headphones"
                     value={name}
                     onChangeText={setName}
                 />
 
                 {/* PRICE */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Price ($) *
                 </Text>
                 <TextInput
-                    className="bg-surface p-3 rounded-lg mb-4 text-primary"
+                    className="bg-surface dark:bg-gray-900 p-3 rounded-lg mb-4 text-primary dark:text-white"
+                    style={{ outlineStyle: 'none' } as any}
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     value={price}
@@ -75,23 +133,23 @@ export default function AddProduct() {
                 />
 
                 {/* CATEGORY */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Category
                 </Text>
                 <TouchableOpacity
                     onPress={() => setModalVisible(true)}
-                    className="bg-surface p-3 rounded-lg mb-4 flex-row justify-between items-center"
+                    className="bg-surface dark:bg-gray-900 p-3 rounded-lg mb-4 flex-row justify-between items-center"
                 >
-                    <Text className="text-primary">{category}</Text>
-                    <Ionicons name="chevron-down" size={20} color={COLORS.secondary} />
+                    <Text className="text-primary dark:text-white">{category}</Text>
+                    <Ionicons name="chevron-down" size={20} color={isDark ? '#9ca3af' : COLORS.secondary} />
                 </TouchableOpacity>
 
                 {/* CATEGORY MODAL */}
                 <Modal visible={modalVisible} animationType="slide" transparent>
                     <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
                         <View className="flex-1 justify-end bg-black/50">
-                            <View className="bg-white rounded-t-2xl p-4 max-h-[50%]">
-                                <Text className="text-lg font-bold text-center mb-4">
+                            <View className="bg-white dark:bg-gray-900 rounded-t-2xl p-4 max-h-[50%]">
+                                <Text className="text-lg font-bold text-center mb-4 dark:text-white">
                                     Select Category
                                 </Text>
 
@@ -100,7 +158,7 @@ export default function AddProduct() {
                                     keyExtractor={(item) => String(item.id)}
                                     renderItem={({ item }) => (
                                         <TouchableOpacity
-                                            className={`p-4 border-b ${category === item.name ? "bg-primary/5" : ""
+                                            className={`p-4 border-b dark:border-gray-800 ${category === item.name ? "bg-primary/5" : ""
                                                 }`}
                                             onPress={() => {
                                                 setCategory(item.name);
@@ -109,7 +167,7 @@ export default function AddProduct() {
                                         >
                                             <View className="flex-row justify-between">
                                                 <Text
-                                                    className={`${category === item.name ? "font-bold text-primary" : ""
+                                                    className={`dark:text-white ${category === item.name ? "font-bold text-primary dark:text-white" : ""
                                                         }`}
                                                 >
                                                     {item.name}
@@ -118,7 +176,7 @@ export default function AddProduct() {
                                                     <Ionicons
                                                         name="checkmark"
                                                         size={20}
-                                                        color={COLORS.primary}
+                                                        color={isDark ? '#e5e7eb' : COLORS.primary}
                                                     />
                                                 )}
                                             </View>
@@ -131,11 +189,12 @@ export default function AddProduct() {
                 </Modal>
 
                 {/* STOCK */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Stock Level
                 </Text>
                 <TextInput
-                    className="bg-surface p-3 rounded-lg mb-4 text-primary"
+                    className="bg-surface dark:bg-gray-900 p-3 rounded-lg mb-4 text-primary dark:text-white"
+                    style={{ outlineStyle: 'none' } as any}
                     placeholder="0"
                     keyboardType="number-pad"
                     value={stock}
@@ -143,18 +202,19 @@ export default function AddProduct() {
                 />
 
                 {/* SIZES */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Sizes (comma separated)
                 </Text>
                 <TextInput
-                    className="bg-surface p-3 rounded-lg mb-4 text-primary"
+                    className="bg-surface dark:bg-gray-900 p-3 rounded-lg mb-4 text-primary dark:text-white"
+                    style={{ outlineStyle: 'none' } as any}
                     placeholder="e.g. S, M, L, XL"
                     value={sizes}
                     onChangeText={setSizes}
                 />
 
                 {/* IMAGE PICKER */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Product Images (max 5)
                 </Text>
 
@@ -170,13 +230,13 @@ export default function AddProduct() {
                             ))}
                         </ScrollView>
                     ) : (
-                        <View className="w-full h-32 rounded-lg bg-gray-100 justify-center items-center border border-dashed border-gray-300">
+                        <View className="w-full h-32 rounded-lg bg-gray-100 dark:bg-gray-800 justify-center items-center border border-dashed border-gray-300 dark:border-gray-700">
                             <Ionicons
                                 name="cloud-upload-outline"
                                 size={32}
-                                color={COLORS.secondary}
+                                color={isDark ? '#9ca3af' : COLORS.secondary}
                             />
-                            <Text className="text-secondary text-xs mt-2">
+                            <Text className="text-secondary dark:text-gray-400 text-xs mt-2">
                                 Tap to upload images
                             </Text>
                         </View>
@@ -184,11 +244,12 @@ export default function AddProduct() {
                 </TouchableOpacity>
 
                 {/* DESCRIPTION */}
-                <Text className="text-secondary text-xs font-bold mb-1 uppercase">
+                <Text className="text-secondary dark:text-gray-400 text-xs font-bold mb-1 uppercase">
                     Description
                 </Text>
                 <TextInput
-                    className="bg-surface p-3 rounded-lg mb-6 text-primary h-24"
+                    className="bg-surface dark:bg-gray-900 p-3 rounded-lg mb-6 text-primary dark:text-white h-24"
+                    style={{ outlineStyle: 'none' } as any}
                     multiline
                     value={description}
                     onChangeText={setDescription}
@@ -196,7 +257,7 @@ export default function AddProduct() {
 
                 {/* FEATURED */}
                 <View className="flex-row justify-between items-center mb-6">
-                    <Text className="text-primary font-bold">Featured Product</Text>
+                    <Text className="text-primary dark:text-white font-bold">Featured Product</Text>
                     <Switch
                         value={isFeatured}
                         onValueChange={setIsFeatured}
@@ -208,7 +269,7 @@ export default function AddProduct() {
                 <TouchableOpacity
                     onPress={handleSubmit}
                     disabled={submitting}
-                    className={`bg-primary p-4 rounded-xl items-center ${submitting ? "opacity-70" : ""
+                    className={`bg-primary dark:bg-indigo-600 p-4 rounded-xl items-center shadow-sm ${submitting ? "opacity-70" : ""
                         }`}
                 >
                     {submitting ? (

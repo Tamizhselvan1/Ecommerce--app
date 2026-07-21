@@ -20,23 +20,23 @@ export const CATEGORIES = [
 export const PROFILE_MENU = [
     { id: 1, title: "My Orders", icon: "receipt-outline", route: "/orders" },
     { id: 2, title: "Shipping Addresses", icon: "location-outline", route: "/addresses" },
-    { id: 4, title: "My Reviews", icon: "star-outline", route: "/" },
-    { id: 5, title: "Settings", icon: "settings-outline", route: "/" },
+    { id: 4, title: "My Reviews", icon: "star-outline", route: "/reviews" },
+    { id: 5, title: "Settings", icon: "settings-outline", route: "/settings" },
 ];
 
 export const getStatusColor = (status: string) => {
     switch (status) {
         case "placed":
-            return "bg-yellow-50 text-yellow-900";
+            return { bg: "bg-yellow-50 dark:bg-yellow-900/30", text: "text-yellow-900 dark:text-yellow-400" };
         case "processing":
-            return "bg-indigo-50 text-indigo-900";
+            return { bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-800 dark:text-blue-300" };
         case "shipped":
-            return "bg-purple-50 text-purple-900";
+            return { bg: "bg-purple-50 dark:bg-purple-900/30", text: "text-purple-900 dark:text-purple-400" };
         case "delivered":
-            return "bg-green-50 text-green-900";
+            return { bg: "bg-green-50 dark:bg-green-900/30", text: "text-green-900 dark:text-green-400" };
         case "cancelled":
-            return "bg-red-50 text-red-900";
+            return { bg: "bg-red-500 dark:bg-red-600", text: "text-white dark:text-white" };
         default:
-            return "bg-gray-50 text-gray-900";
+            return { bg: "bg-gray-50 dark:bg-gray-800", text: "text-gray-900 dark:text-gray-300" };
     }
 };

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Order from "../models/order.js";
+import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
 import Product from "../models/Products.js";
 
@@ -130,7 +130,7 @@ export const updateOrderStatus = async (req: Request, res: Response)=>{
         if(orderStatus === "delivered") order.deliveredAt = new Date();
 
         await order.save();
-        res.json({sucess: true, data: order});
+        res.json({success: true, data: order});
        
 
     } catch (error: any) {
@@ -163,6 +163,47 @@ export const getAllOrders = async (req: Request, res: Response)=>{
             pagination: {total,page:Number(page), pages: Math.ceil(total/ Number (limit))}
         })
 
+    } catch (error: any) {
+        res.status(500).json({success: false, message:error.message})
+    }
+}
+
+//Cancel order
+//PUT /api/orders/:id/cancel
+export const cancelOrder = async (req: Request, res: Response)=>{
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if(!order){
+            return res.status(404).json({success: false, message: "Order not found"})
+        }
+
+        if(order.user.toString() !== req.user._id.toString()){
+            return res.status(403).json({success: false, message: "Not authorized"});
+        }
+
+        if(order.orderStatus === 'shipped' || order.orderStatus === 'delivered') {
+             return res.status(400).json({success: false, message: "Cannot cancel order that is already shipped or delivered."});
+        }
+
+        if(order.orderStatus === 'cancelled') {
+             return res.status(400).json({success: false, message: "Order is already cancelled."});
+        }
+
+        order.orderStatus = 'cancelled';
+        
+        // Restore stock
+        for(const item of order.items) {
+             const product = await Product.findById(item.product);
+             if (product) {
+                 product.stock += item.quantity;
+                 await product.save();
+             }
+        }
+
+        await order.save();
+        res.json({success: true, data: order, message: "Order cancelled successfully"});
+       
     } catch (error: any) {
         res.status(500).json({success: false, message:error.message})
     }

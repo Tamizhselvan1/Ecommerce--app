@@ -10,17 +10,21 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/components/Header";
-import { BANNERS, dummyProducts } from "@/assets/assets";
+import { BANNERS } from "@/assets/assets";
 import { useRouter } from "expo-router";
 import { CATEGORIES } from "@/constants";
 import CategoryItem from "@/components/CategoryItem";
 import { Product } from "@/constants/types";
 import ProductCard from "@/components/ProductCard";
+import api from "@/constants/api";
+import { useColorScheme } from "nativewind";
 
 const { width } = Dimensions.get("window");
 
 export default function Home() {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
@@ -33,8 +37,16 @@ export default function Home() {
   ];
 
   const fetchProducts = async () => {
-    setProducts(dummyProducts);
-    setLoading(false);
+    try {
+      const response = await api.get("/products");
+      if (response.data.success) {
+        setProducts(response.data.data);
+      }
+    } catch (error) {
+      console.log("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -61,7 +73,7 @@ export default function Home() {
    }, [activeBannerIndex]);
 
   return (
-    <SafeAreaView className="flex-1" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-gray-950" edges={["top"]}>
       <Header title="Forever" showMenu showCart showLogo />
 
       <ScrollView
@@ -91,7 +103,7 @@ export default function Home() {
             {BANNERS.map((banner, index) => (
               <View
                 key={index}
-                className="relative h-48 bg-gray-200 overflow-hidden rounded-xl"
+                className="relative h-48 bg-gray-200 dark:bg-gray-800 overflow-hidden rounded-xl"
                 style={{ width: width - 32 }}
               >
                 <Image
@@ -130,8 +142,8 @@ export default function Home() {
                 key={index}
                 className={`h-2 rounded-full ${
                   index === activeBannerIndex
-                    ? "w-6 bg-primary"
-                    : "w-2 bg-gray-300"
+                    ? "w-6 bg-primary dark:bg-white"
+                    : "w-2 bg-gray-300 dark:bg-gray-700"
                 }`}
               />
             ))}
@@ -141,7 +153,7 @@ export default function Home() {
         {/* Categories */}
         <View className="mb-6">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-bold text-primary">
+            <Text className="text-xl font-bold text-primary dark:text-gray-100">
               Categories
             </Text>
           </View>
@@ -171,12 +183,12 @@ export default function Home() {
         {/* Popular Products */}
         <View className="mb-8">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-bold text-primary">
+            <Text className="text-xl font-bold text-primary dark:text-gray-100">
               Popular
             </Text>
 
             <TouchableOpacity onPress={() => router.push("/shop")}>
-              <Text className="text-secondary text-sm">
+              <Text className="text-secondary dark:text-gray-400 text-sm">
                 See All
               </Text>
             </TouchableOpacity>
@@ -184,7 +196,7 @@ export default function Home() {
 
           {/* Products will be displayed here */}
           {loading ? (
-            <ActivityIndicator size='large' />
+            <ActivityIndicator size='large' color={isDark ? '#FFF' : '#000'} />
           ) : (
             <View className="flex-row flex-wrap justify-between">
               {products.slice(0,4).map((product)=>(
@@ -196,11 +208,11 @@ export default function Home() {
         </View>
 
         {/* Newsletter CTA */}
-        <View className="bg-gray-100 p-6 rounded-2xl mb-20 items-center">
-          <Text className="text-2xl font-bold text-primary">Join the Revolution</Text>
-          <Text className="text-secondary text-center mb-4">Subscribe to our newsletter and get 10% off your first purchase.</Text>
-          <TouchableOpacity className="bg-primary w-4/5 py-3 rounded-full items-center">
-            <Text className="text-white font-medium text-base">Subscribe Now</Text>
+        <View className="bg-gray-100 dark:bg-gray-900 border border-transparent dark:border-gray-800 p-6 rounded-2xl mb-20 items-center">
+          <Text className="text-2xl font-bold text-primary dark:text-gray-100">Join the Revolution</Text>
+          <Text className="text-secondary dark:text-gray-400 text-center mb-4">Subscribe to our newsletter and get 10% off your first purchase.</Text>
+          <TouchableOpacity className="bg-primary dark:bg-white w-4/5 py-3 rounded-full items-center">
+            <Text className="text-white dark:text-primary font-medium text-base">Subscribe Now</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

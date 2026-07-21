@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User.js";
 import Product from "../models/Products.js";
-import Order from "../models/order.js";
+import Order from "../models/Order.js";
 
 //Get dashboard stats
 //GET /api/admin/stats

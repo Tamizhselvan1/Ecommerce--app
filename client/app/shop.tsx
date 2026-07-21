@@ -12,9 +12,10 @@ import { Ionicons } from "@expo/vector-icons";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 
-import { dummyProducts } from "@/assets/assets";
 import { Product } from "@/constants/types";
 import { COLORS } from "@/constants";
+import api from "@/constants/api";
+import { useColorScheme } from "nativewind";
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,9 +23,13 @@ export default function Shop() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Fetch Products
-  const fetchProducts = async (pageNumber: number) => {
+  const fetchProducts = async (pageNumber: number, currentSearchQuery = searchQuery) => {
     if (pageNumber === 1) {
       setLoading(true);
     } else {
@@ -32,19 +37,27 @@ export default function Shop() {
     }
 
     try {
-      const start = (pageNumber - 1) * 10;
-      const end = start + 10;
+      const response = await api.get("/products", {
+        params: {
+          page: pageNumber,
+          limit: 10,
+          search: currentSearchQuery || undefined,
+        },
+      });
 
-      const paginatedData = dummyProducts.slice(start, end);
+      if (response.data.success) {
+        const fetchedProducts = response.data.data;
+        const pagination = response.data.pagination;
 
-      if (pageNumber === 1) {
-        setProducts(paginatedData);
-      } else {
-        setProducts((prev) => [...prev, ...paginatedData]);
+        if (pageNumber === 1) {
+          setProducts(fetchedProducts);
+        } else {
+          setProducts((prev) => [...prev, ...fetchedProducts]);
+        }
+
+        setHasMore(pagination.page < pagination.pages);
+        setPage(pageNumber);
       }
-
-      setHasMore(end < dummyProducts.length);
-      setPage(pageNumber);
     } catch (error) {
       console.error("Pagination Error:", error);
     } finally {
@@ -56,42 +69,58 @@ export default function Shop() {
   // Load More Products
   const loadMore = () => {
     if (!loading && !loadingMore && hasMore) {
-      fetchProducts(page + 1);
+      fetchProducts(page + 1, searchQuery);
     }
   };
 
   useEffect(() => {
-    fetchProducts(1);
-  }, []);
+    const timer = setTimeout(() => {
+      fetchProducts(1, searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-gray-950" edges={["top"]}>
       {/* Header */}
       <Header title="Shop" showBack showCart />
 
       {/* Search Bar */}
-      <View className="flex-row items-center gap-2 mx-4 my-3">
-        <View className="flex-1 flex-row items-center bg-white rounded-xl border border-gray-200 px-3">
+      <View className="flex-row items-center mx-4 my-2">
+        <View className="flex-1 flex-row items-center bg-[#efefef] dark:bg-[#262626] rounded-xl px-3 h-10">
           <Ionicons
             name="search"
-            size={20}
-            color={COLORS.secondary}
+            size={18}
+            color="#8e8e8e"
           />
 
           <TextInput
-            className="flex-1 ml-2 py-3 text-primary"
-            placeholder="Search products..."
-            placeholderTextColor="#999"
+            className="flex-1 ml-3 text-primary dark:text-white text-[15px]"
+            placeholder="Search"
+            placeholderTextColor="#8e8e8e"
             returnKeyType="search"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={{ 
+              paddingVertical: 0, 
+              outlineStyle: 'none',
+              color: isDark ? '#FFFFFF' : '#111111'
+            } as any}
           />
+          
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")} className="p-1">
+              <Ionicons name="close-circle" size={16} color="#8e8e8e" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Filter Button */}
-        <TouchableOpacity className="w-12 h-12 bg-gray-800 rounded-xl items-center justify-center">
+        <TouchableOpacity className="ml-3 p-1">
           <Ionicons
             name="options-outline"
-            size={24}
-            color="white"
+            size={26}
+            color={isDark ? 'white' : 'black'}
           />
         </TouchableOpacity>
       </View>
@@ -101,7 +130,7 @@ export default function Shop() {
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator
             size="large"
-            color={COLORS.primary}
+            color={isDark ? '#FFF' : COLORS.primary}
           />
         </View>
       ) : (
@@ -126,14 +155,14 @@ export default function Shop() {
             loadingMore ? (
               <ActivityIndicator
                 size="small"
-                color={COLORS.primary}
+                color={isDark ? '#FFF' : COLORS.primary}
                 style={{ marginVertical: 20 }}
               />
             ) : null
           }
           ListEmptyComponent={
             <View className="flex-1 justify-center items-center mt-20">
-              <Text>No products found.</Text>
+              <Text className="text-primary dark:text-gray-100">No products found.</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}

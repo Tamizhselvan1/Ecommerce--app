@@ -2,9 +2,11 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
 
 import { HeaderProps } from "@/constants/types";
 import { COLORS } from "@/constants";
+import { useCart } from "@/context/CartContext";
 
 export default function Header({
   title,
@@ -15,12 +17,14 @@ export default function Header({
   showLogo,
 }: HeaderProps) {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const iconColor = isDark ? '#f3f4f6' : COLORS.primary;
 
-  // Replace with your cart state/context later
-  const itemCount = 6;
+  const { itemCount = 0 } = useCart() || {};
 
   return (
-    <View className="flex-row items-center justify-between px-4 py-3 bg-white">
+    <View className="flex-row items-center justify-between px-4 py-3 bg-white dark:bg-gray-950">
       {/* Left Section */}
       <View className="flex-row items-center flex-1">
         {showBack && (
@@ -31,7 +35,7 @@ export default function Header({
             <Ionicons
               name="arrow-back"
               size={24}
-              color={COLORS.primary}
+              color={iconColor}
             />
           </TouchableOpacity>
         )}
@@ -41,7 +45,7 @@ export default function Header({
             <Ionicons
               name="menu-outline"
               size={28}
-              color={COLORS.primary}
+              color={iconColor}
             />
           </TouchableOpacity>
         )}
@@ -55,7 +59,7 @@ export default function Header({
             />
           </View>
         ) : title ? (
-          <Text className="flex-1 text-center text-xl font-bold text-primary">
+          <Text className="flex-1 text-center text-xl font-bold text-primary dark:text-gray-100">
             {title}
           </Text>
         ) : (
@@ -70,7 +74,7 @@ export default function Header({
             <Ionicons
               name="search-outline"
               size={24}
-              color={COLORS.primary}
+              color={iconColor}
             />
           </TouchableOpacity>
         )}
@@ -81,7 +85,7 @@ export default function Header({
               <Ionicons
                 name="bag-outline"
                 size={24}
-                color={COLORS.primary}
+                color={iconColor}
               />
 
               {itemCount > 0 && (

@@ -1,16 +1,20 @@
 import { Request, Response } from "express";
 import Product from "../models/Products.js";
-import cloudinary from "../config/cloudinary.js";
-
+import fs from "fs";
+import path from "path";
 //Get all products
 // GET/api/products
 export const getProducts = async (req: Request, res: Response) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const { page = 1, limit = 10, search } = req.query;
 
-        const query = {
+        const query: any = {
             isActive: true
         };
+
+        if (search) {
+            query.name = { $regex: search, $options: "i" };
+        }
 
         const total = await Product.countDocuments(query);
 
@@ -68,30 +72,12 @@ export const createProduct = async (req: Request, res: Response) => {
     try {
         let images: string[] = [];
 
-        // Upload images to Cloudinary
+        // Handle local file uploads
         if (req.files && (req.files as Express.Multer.File[]).length > 0) {
-
-            const uploadPromises = (req.files as Express.Multer.File[]).map((file) => {
-                return new Promise<string>((resolve, reject) => {
-
-                    const uploadStream = cloudinary.uploader.upload_stream(
-                        {
-                            folder: "ecom-app/products",
-                        },
-                        (error, result) => {
-                            if (error) {
-                                reject(error);
-                            } else {
-                                resolve(result!.secure_url);
-                            }
-                        }
-                    );
-
-                    uploadStream.end(file.buffer);
-                });
+            const baseUrl = `${req.protocol}://${req.get("host")}`;
+            images = (req.files as Express.Multer.File[]).map(file => {
+                return `${baseUrl}/uploads/${file.filename}`;
             });
-
-            images = await Promise.all(uploadPromises);
         }
 
         // Parse sizes
@@ -152,30 +138,12 @@ export const updateProduct = async (req: Request, res: Response) => {
             }
         }
 
-        // Handle file uploads
+        // Handle local file uploads
         if (req.files && (req.files as Express.Multer.File[]).length > 0) {
-
-            const uploadPromises = (req.files as Express.Multer.File[]).map((file) => {
-                return new Promise<string>((resolve, reject) => {
-
-                    const uploadStream = cloudinary.uploader.upload_stream(
-                        {
-                            folder: "ecom-app/products",
-                        },
-                        (error, result) => {
-                            if (error) {
-                                reject(error);
-                            } else {
-                                resolve(result!.secure_url);
-                            }
-                        }
-                    );
-
-                    uploadStream.end(file.buffer);
-                });
+            const baseUrl = `${req.protocol}://${req.get("host")}`;
+            const newImages = (req.files as Express.Multer.File[]).map(file => {
+                return `${baseUrl}/uploads/${file.filename}`;
             });
-
-            const newImages = await Promise.all(uploadPromises);
             images = [...images, ...newImages];
         }
 
@@ -195,7 +163,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         updates.sizes = sizes
         }
 
-        if(req.body.existingImages || (req.files && (req.files as any).lenght > 0)){
+        if(req.body.existingImages || (req.files && (req.files as any).length > 0)){
             updates.images = images
         }
         delete updates.existingImages;
@@ -229,18 +197,20 @@ export const deleteProduct = async (req: Request, res: Response) => {
         return res.status(404).json({success: false, message: "Product not found"});
     }
 
-    //Delete images from cloudinary
+    //Delete images from local storage
     if(product.images && product.images.length >0){
-       const deletePromises= product.images.map((imageUrl)=>{
-        const publicIdMatch = imageUrl.match(/\/v\d+\/(.+)\.[a-z]+$/);
-        const publicId = publicIdMatch ? publicIdMatch[1] : null;
-        if(publicId){
-            return cloudinary.uploader.destroy(publicId)
-        }
-        return Promise.resolve();
-    })
-    await Promise.all(deletePromises);
-    } 
+        product.images.forEach((imageUrl)=>{
+            try {
+                const filename = imageUrl.split('/uploads/')[1];
+                if(filename) {
+                    const filepath = path.join(process.cwd(), 'uploads', filename);
+                    if (fs.existsSync(filepath)) {
+                        fs.unlinkSync(filepath);
+                    }
+                }
+            } catch(e) {}
+        });
+    }
      await Product.findByIdAndDelete(req.params.id)
      res.json({success: true,message: "Product deleted"})
 

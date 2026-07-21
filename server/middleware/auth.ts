@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/User.js";
 import { error } from "node:console";
+import { getAuth } from "@clerk/express";
 
 export const protect = async (
     req: Request,
@@ -8,7 +9,11 @@ export const protect = async (
     next: NextFunction
 ) => {
     try {
-        const { userId } = req.auth;
+        const auth = getAuth(req);
+        const userId = auth?.userId;
+        
+        console.log("Auth header:", req.headers.authorization);
+        console.log("getAuth(req) userId:", userId);
 
         if (!userId) {
             return res.status(401).json({

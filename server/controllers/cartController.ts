@@ -12,9 +12,18 @@ export const getCart = async (req: Request, res: Response)=>{
 
         if(!cart){
             cart = await Cart.create({user: req.user._id, items: []})
+        } else {
+            // Filter out items where the product is null (deleted products)
+            const originalLength = cart.items.length;
+            cart.items = cart.items.filter(item => item.product != null);
+            
+            if (cart.items.length !== originalLength) {
+                cart.calculateTotal();
+                await cart.save();
+            }
         }
 
-        res.json({success: false, data: cart})
+        res.json({success: true, data: cart})
 
     } catch (error: any) {
         res.status(500).json({success: false, message:error.message})
@@ -50,7 +59,7 @@ export const addToCart = async (req: Request, res: Response)=>{
 
         if(existingItem){
             existingItem.quantity += quantity;
-            existingItem.price += product.price;
+            existingItem.price = product.price;
         }else{
             cart.items.push({
                 product: productId,
@@ -84,10 +93,10 @@ export const updateCartItem = async (req: Request, res: Response)=>{
             return res.status(404).json({success:false, message: "cart not found"})
         }
 
-        const item = cart.items.find((item)=> item.product.toString() === productId && item.size === size);
+        const item = cart.items.find((item)=> item.product.toString() === productId && (item.size === size || (item.size == null && size === 'M')));
 
         if(!item){
-            return res.status(404).json({success: false, messageInRaw: "Item not in cart"})
+            return res.status(404).json({success: false, message: "Item not in cart"})
         }
 
         if(quantity <= 0){
@@ -115,14 +124,21 @@ export const updateCartItem = async (req: Request, res: Response)=>{
 //DELETE /api/cart/item/:productId
 export const removeCartItem = async (req: Request, res: Response)=>{
     try {
-        const {size} = req.query;
+        let {size} = req.query;
+        if (size === "undefined") size = undefined as any;
+        
         const cart = await Cart.findOne({user:req.user._id})
 
-        if(!cart || !size){
+        if(!cart){
             return res.status(404).json({success: false, message: "cart not found"});
         }
 
-        cart.items = cart.items.filter((item)=>item.product.toString() !== req.params.productId || item.size !== size)
+        cart.items = cart.items.filter((item) => {
+            const isSameProduct = item.product.toString() === req.params.productId;
+            // Treat missing size and "M" as equivalent if frontend defaults to M
+            const isSameSize = item.size === size || (item.size == null && size === 'M');
+            return !(isSameProduct && isSameSize);
+        })
         
         cart.calculateTotal();
         await cart.save();
@@ -148,7 +164,7 @@ export const clearCart = async (req: Request, res: Response)=>{
             await cart.save();
         }
 
-
+        res.json({success: true, data: cart});
     } catch (error: any) {
         res.status(500).json({success: false, message:error.message})
     }

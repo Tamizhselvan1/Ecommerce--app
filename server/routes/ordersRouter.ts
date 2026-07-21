@@ -1,5 +1,5 @@
 import  express  from "express";
-import { createOrder, getAllOrders, getOrder, getOrders, updateOrderStatus } from "../controllers/orderController.js";
+import { createOrder, getAllOrders, getOrder, getOrders, updateOrderStatus, cancelOrder } from "../controllers/orderController.js";
 import { authorized, protect } from "../middleware/auth.js";
 
 const OrderRouter = express.Router();
@@ -18,5 +18,8 @@ OrderRouter.put('/:id/status',protect,authorized("admin"), updateOrderStatus);
 
 //Update order status (Admin only)
 OrderRouter.get('/admin/all',protect,authorized("admin"), getAllOrders);
+
+//Cancel order (User)
+OrderRouter.put('/:id/cancel',protect, cancelOrder);
 
 export default OrderRouter;

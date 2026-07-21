@@ -57,10 +57,12 @@ export const clerkWebhook = async (req: Request, res: Response) => {
       
       const user = await User.findOne({ clerkId: evt.data.id });
       const email = evt.data.email_addresses?.[0]?.email_address;
+      const phone = evt.data.phone_numbers?.[0]?.phone_number;
       
       const userData = {
         clerkId: evt.data.id,
         email: email,
+        phone: phone,
         name: `${evt.data.first_name ?? ""} ${evt.data.last_name ?? ""}`.trim(),
         image: evt.data.image_url,
       };
