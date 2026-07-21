@@ -3,11 +3,14 @@ import { useEffect } from "react";
 import { View, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants";
-import { dummyUser } from "@/assets/assets";
+import { useUser } from "@clerk/clerk-expo";
+import { useColorScheme } from "nativewind";
 
 export default function AdminLayout() {
-    const { user } = { user: dummyUser }
-    const isLoaded = true;
+    const { user, isLoaded } = useUser()
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
+  
     const router = useRouter();
 
     useEffect(() => {
@@ -18,7 +21,7 @@ export default function AdminLayout() {
 
     if (!isLoaded) {
         return (
-            <View className="flex-1 justify-center items-center bg-surface">
+            <View className="flex-1 justify-center items-center bg-surface dark:bg-gray-900">
                 <ActivityIndicator size="large" color={COLORS.primary} />
             </View>
         );
@@ -30,22 +33,26 @@ export default function AdminLayout() {
         <Tabs
             screenOptions={{
                 headerStyle: {
-                    backgroundColor: "#fff",
+                    backgroundColor: isDark ? "#030712" : "#fff",
                 },
-                headerTintColor: COLORS.primary,
+                headerTintColor: isDark ? "#fff" : COLORS.primary,
                 headerTitleStyle: {
                     fontWeight: "bold",
                 },
                 headerShadowVisible: false,
-                tabBarActiveTintColor: COLORS.primary,
+                tabBarStyle: {
+                    backgroundColor: isDark ? "#030712" : "#fff",
+                    borderTopColor: isDark ? "#1f2937" : "#f3f4f6",
+                },
+                tabBarActiveTintColor: isDark ? "#fff" : COLORS.primary,
                 tabBarInactiveTintColor: "gray",
                 headerRight: () => (
                     <TouchableOpacity
                         onPress={() => router.replace("/(tabs)")}
                         className="mr-4 flex-row items-center"
                     >
-                        <Ionicons name="log-out-outline" size={24} color={COLORS.primary} />
-                        <Text className="ml-1 text-primary font-medium">Exit</Text>
+                        <Ionicons name="log-out-outline" size={24} color={isDark ? "#fff" : COLORS.primary} />
+                        <Text className="ml-1 text-primary dark:text-white font-medium">Exit</Text>
                     </TouchableOpacity>
                 ),
             }}

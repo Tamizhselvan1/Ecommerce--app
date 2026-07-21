@@ -13,7 +13,7 @@ export default function Favorites() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className='flex-1 bg-surface' edges={['top']}>
+    <SafeAreaView className='flex-1 bg-surface dark:bg-gray-950' edges={['top']}>
       <Header title='Wishlist' showMenu showCart/>
       {wishlist.length > 0 ?(
         <ScrollView className='flex-1 px-4 mt-4' showsVerticalScrollIndicator={false}>
@@ -27,20 +27,20 @@ export default function Favorites() {
       ):(
         <View className="flex-1 justify-center items-center px-5">
 
-            <Text className="text-xl font-semibold text-gray-800 text-center">
+            <Text className="text-xl font-semibold text-gray-800 dark:text-gray-100 text-center">
               Your wishlist is empty
             </Text>
 
-            <Text className="text-gray-500 mt-2 text-center">
+            <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">
               Looks like you haven`t added anything yet.
             </Text>
 
             <TouchableOpacity
-              className="mt-6 bg-primary px-8 py-4 rounded-full"
+              className="mt-6 bg-primary dark:bg-white px-8 py-4 rounded-full"
               onPress={() => router.push('/')}
               activeOpacity={0.8}
             >
-              <Text className="text-white font-bold text-base">
+              <Text className="text-white dark:text-primary font-bold text-base">
                 Start Shopping
               </Text>
             </TouchableOpacity>

@@ -18,8 +18,8 @@ ProductRouter.post('/', upload.array("images", 5), protect, authorized('admin'),
 ProductRouter.put('/:id', upload.array("images", 5), protect, authorized('admin'), updateProduct);
 
 //delete product (Admin only)
+//Delete product
 ProductRouter.delete('/:id', protect, authorized('admin'), deleteProduct);
 
 
 export default ProductRouter;
-

@@ -1,20 +1,48 @@
-import { verifyWebhook } from "@clerk/express/webhooks";
+import { Webhook } from "svix";
 import User from "../models/User.js";
 export const clerkWebhook = async (req, res) => {
+    const secretKey = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
+    if (!secretKey) {
+        console.error("❌ Missing CLERK_WEBHOOK_SIGNING_SECRET");
+        return res.status(500).send("Server configuration error");
+    }
+    // Check what req.body actually is
+    console.log("Req body type:", typeof req.body);
+    console.log("Is Buffer:", Buffer.isBuffer(req.body));
+    // If req.body is a Buffer (from express.raw), convert it to string. 
+    // If it's an object (from express.json), stringify it (fallback).
+    let payloadString;
+    if (Buffer.isBuffer(req.body)) {
+        payloadString = req.body.toString('utf8');
+    }
+    else if (typeof req.body === 'object') {
+        payloadString = JSON.stringify(req.body);
+    }
+    else {
+        payloadString = String(req.body);
+    }
+    const svixHeaders = {
+        "svix-id": req.headers["svix-id"],
+        "svix-signature": req.headers["svix-signature"],
+        "svix-timestamp": req.headers["svix-timestamp"],
+    };
+    console.log("Svix Headers:", svixHeaders);
+    const wh = new Webhook(secretKey);
     let evt;
     try {
-        const secretKey = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
-        if (!secretKey) {
-            throw new Error("Missing CLERK_WEBHOOK_SIGNING_SECRET");
-        }
-        evt = await verifyWebhook(req, { signingSecret: secretKey });
+        evt = wh.verify(payloadString, svixHeaders);
     }
     catch (err) {
-        console.error("❌ Webhook signature verification failed:", err);
-        return res.status(400).send("Error verifying webhook");
+        console.error("❌ Webhook signature verification failed!");
+        console.error("Exact Svix Error:", err.message);
+        console.error("Payload snippet:", payloadString.substring(0, 100) + "...");
+        return res.status(400).send(`Error verifying webhook: ${err.message}`);
     }
     try {
         console.log("✅ Webhook verified. Event type:", evt.type);
+        // Ensure database is connected before running Mongoose queries!
+        const connectDB = (await import("../config/db.js")).default;
+        await connectDB();
         if (evt.type === "user.created" || evt.type === "user.updated") {
             console.log("Processing user data for Clerk ID:", evt.data.id);
             const user = await User.findOne({ clerkId: evt.data.id });
@@ -25,7 +53,6 @@ export const clerkWebhook = async (req, res) => {
                 name: `${evt.data.first_name ?? ""} ${evt.data.last_name ?? ""}`.trim(),
                 image: evt.data.image_url,
             };
-            console.log("User data to save:", userData);
             if (user) {
                 console.log("Updating existing user...");
                 await User.findOneAndUpdate({ clerkId: evt.data.id }, userData);

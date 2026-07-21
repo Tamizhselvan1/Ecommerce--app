@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Webhook } from 'svix';
 import 'dotenv/config';
 

@@ -3,21 +3,24 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants";
 import { useCart } from "@/context/CartContext";
 import { View } from "react-native";
+import { useColorScheme } from "nativewind";
 
 export default function TabLayout() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const {cartItems} = useCart()
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: "#CDCDE0",
+        tabBarActiveTintColor: isDark ? '#FFF' : COLORS.primary,
+        tabBarInactiveTintColor: isDark ? '#4B5563' : "#CDCDE0",
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: isDark ? '#030712' : "#fff",
           borderTopWidth: 1,
-          borderTopColor: "#F0F0F0",
+          borderTopColor: isDark ? '#1f2937' : "#F0F0F0",
           height: 56,
           paddingTop: 8,
         },

@@ -83,6 +83,7 @@ export interface IProduct extends Document {
 export interface IUser extends Document {
     name: string;
     email: string;
+    phone?: string;
     clerkId: string;
     image?: string;
     role: "user" | "admin";

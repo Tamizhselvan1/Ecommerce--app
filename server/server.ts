@@ -18,6 +18,7 @@ import CartRouter from "./routes/cartRouter.js";
 import OrderRouter from "./routes/ordersRouter.js";
 import AddressRouter from "./routes/addressRouter.js";
 import AdminRouter from "./routes/adminRouter.js";
+import WishlistRouter from "./routes/wishlistRouter.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.post('/api/clerk',express.raw({type: 'application/json'}), clerkWebhook)
 app.use(cors())
 app.use(express.json());
 app.use(clerkMiddleware())
+app.use('/uploads', express.static('uploads'));
 
 const port = process.env.PORT || 3000;
 
@@ -42,7 +44,7 @@ app.use('/api/cart', CartRouter);
 app.use('/api/orders', OrderRouter);
 app.use('/api/addresses', AddressRouter);
 app.use('/api/admin', AdminRouter);
-
+app.use('/api/wishlist', WishlistRouter);
 
 await makeAdmin()
 

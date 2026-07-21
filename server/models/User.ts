@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema<IUser>(
     {
         name:{type: String,trim: true},
         email:{type: String,trim: true,unique: true},
+        phone:{type: String, trim: true},
         clerkId:{type: String,sparse: true, unique:true},
         image:{type: String},
         role:{type: String,enum: ["user","admin"], default:'user'},
