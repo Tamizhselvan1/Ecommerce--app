@@ -48,10 +48,8 @@ app.use('/api/wishlist', WishlistRouter);
 
 await makeAdmin()
 
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(port, () => {
-        console.log(`Server is running at http://localhost:${port}`);
-    });
-}
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+});
 
 export default app;
